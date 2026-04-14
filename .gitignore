@@ -1,0 +1,60 @@
+# ── Terraform ──────────────────────────────────────────
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/terraform.tfvars
+terraform/logs/
+*.tfplan
+
+# ── Credentials & secrets ──────────────────────────────
+*.json
+.env
+.env.*
+!.env.example
+service-account*.json
+credentials.json
+
+# ── dbt ────────────────────────────────────────────────
+dbt_transformation/target/
+dbt_transformation/dbt_packages/
+dbt_transformation/logs/
+dbt_transformation/profiles.yml
+logs/
+*.log
+
+# ── Python ─────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+env/
+venv/
+.env/
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# ── Jupyter ────────────────────────────────────────────
+.ipynb_checkpoints/
+Untitled*.ipynb
+
+# ── Generated outputs ──────────────────────────────────
+top_50_sp500_info.csv
+
+# ── Windows artifacts ──────────────────────────────────
+*.Zone.Identifier
+Thumbs.db
+desktop.ini
+
+# ── macOS artifacts ────────────────────────────────────
+.DS_Store
+.AppleDouble
+
+# ── IDE ────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -1,0 +1,61 @@
+id: setup_kv_store
+namespace: company.data
+
+inputs:
+  - id: gcp_project_id
+    type: STRING
+    description: "GCP Project ID"
+  - id: gcp_region
+    type: STRING
+    description: "GCP Region"
+    defaults: "us-central1"
+  - id: bq_dataset
+    type: STRING
+    description: "BigQuery Dataset name"
+  - id: gcs_bucket
+    type: STRING
+    description: "GCS Bucket name"
+  - id: gcp_creds
+    type: STRING
+    description: "GCP Service Account JSON (raw content)"
+
+tasks:
+  - id: set_gcp_project_id
+    type: io.kestra.plugin.core.kv.Set
+    key: GCP_PROJECT_ID
+    value: "{{ inputs.gcp_project_id }}"
+    overwrite: true
+
+  - id: set_gcp_region
+    type: io.kestra.plugin.core.kv.Set
+    key: GCP_REGION
+    value: "{{ inputs.gcp_region }}"
+    overwrite: true
+
+  - id: set_bq_dataset
+    type: io.kestra.plugin.core.kv.Set
+    key: BQ_DATASET
+    value: "{{ inputs.bq_dataset }}"
+    overwrite: true
+
+  - id: set_gcs_bucket
+    type: io.kestra.plugin.core.kv.Set
+    key: GCS_BUCKET
+    value: "{{ inputs.gcs_bucket }}"
+    overwrite: true
+
+  - id: set_gcp_creds
+    type: io.kestra.plugin.core.kv.Set
+    key: GCP_CREDS
+    value: "{{ inputs.gcp_creds }}"
+    overwrite: true
+
+  - id: confirm
+    type: io.kestra.plugin.core.log.Log
+    message: |
+      KV Store configured:
+      - GCP_PROJECT_ID = {{ kv('GCP_PROJECT_ID') }}
+      - GCP_REGION     = {{ kv('GCP_REGION') }}
+      - BQ_DATASET     = {{ kv('BQ_DATASET') }}
+      - GCS_BUCKET     = {{ kv('GCS_BUCKET') }}
+      - GCP_CREDS      = {{ kv('GCP_CREDS') | truncate(30) }}...

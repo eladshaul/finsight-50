@@ -1,0 +1,52 @@
+models:
+  - name: int_annual_financials_unified
+    columns:
+      - name: measurement_date 
+        tests:
+          - max_date_gap:
+              arguments: 
+                compare_column: report_date
+                max_days: 7
+
+      - name: historical_market_cap
+        tests:
+          - calculation_integrity:
+              arguments:
+                multiplier_column: shares_outstanding
+                factor_column: close_price
+
+      - name: shares_outstanding
+        tests:
+          - is_positive
+
+  - name: int_quarterly_ttm_snapshot
+    description: "Current snapshot of company valuations based on TTM financial data and latest stock prices"
+    columns:
+
+      - name: current_market_cap
+        tests:
+          - not_null
+          - calculation_integrity:
+              arguments: # הוספנו את הקינון הזה כדי להעלים את האזהרות
+                multiplier_column: shares_outstanding
+                factor_column: current_price
+
+      - name: ttm_total_revenue
+        tests:
+          - is_positive
+      
+      - name: shares_outstanding
+        tests:
+          - is_positive
+          - not_null
+
+      - name: current_price
+        tests:
+          - is_positive
+
+      - name: latest_price_date
+        tests:
+          - not_null
+          - is_recent:
+              arguments:
+                max_days: 14

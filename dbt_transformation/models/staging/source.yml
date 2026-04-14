@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: yfinance_raw
+    database: "{{ env_var('DBT_ENV_PROJECT_ID', 'project-ac733521-06f8-46e1-91a') }}"
+    schema: sp500_top50_analysis_gold
+    tables:
+      - name: fact_history
+      - name: fact_income_statement_annual
+      - name: fact_balance_sheet_annual
+      - name: fact_cash_flow_annual
+      - name: fact_income_statement_quarter
+      - name: fact_balance_sheet_quarter
+      - name: fact_cash_flow_quarter
+      - name: company_info_dim
