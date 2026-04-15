@@ -105,6 +105,8 @@ The project delivers this by providing:
   └───────────────────────────────────────────────────────────┘
 ```
 
+<img src="images/dashboard/FinSight_50_Architecture_diagram.svg" alt="Project Architecture" width="800">
+
 ---
 
 ## Data Sources & Coverage
@@ -495,7 +497,7 @@ GCS_BUCKET=your-project-id-raw-data-lake
 Kestra runs locally as a Docker Compose stack (Kestra server + Postgres backend).
 
 ```bash
-cd ingestion/
+cd kestra/
 docker-compose up -d
 ```
 
@@ -610,7 +612,6 @@ dbt reads from the raw BigQuery tables and builds the 5 mart tables. It runs ins
 #### 8.1 Build the dbt Docker image
 
 ```bash
-cd dbt/
 docker build -t finsight-dbt .
 ```
 
