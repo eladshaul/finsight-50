@@ -310,7 +310,7 @@ After `apply`, the `.env` file is ready and GCP resources are live.
 
 Kestra runs locally via Docker Compose and is accessible at `http://localhost:8080` (credentials: `admin@kestra.io` / `Admin1234!`).
 
-**Flow: `yfinance_to_bigquery_pro_test`**
+**Flow: `yfinance_to_bigquery_pro`**
 
 The flow accepts one boolean input that controls the ingestion scope:
 
@@ -379,7 +379,7 @@ Before you begin, make sure the following are installed and available on your ma
 ### Step 1 — Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/finsight-50.git
+git clone https://github.com/eladshaul/finsight-50.git
 cd finsight-50
 ```
 
@@ -400,7 +400,6 @@ In the GCP console, navigate to **APIs & Services → Enable APIs and Services**
 - BigQuery API
 - Cloud Storage API
 - Identity and Access Management (IAM) API
-- Compute Engine API (required for service account credential management)
 
 Or enable all at once via `gcloud`:
 
@@ -409,7 +408,6 @@ gcloud services enable \
   bigquery.googleapis.com \
   storage.googleapis.com \
   iam.googleapis.com \
-  compute.googleapis.com \
   --project=YOUR_PROJECT_ID
 ```
 
@@ -444,10 +442,10 @@ gcloud services enable \
 From the project root:
 
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
-This installs all dependencies needed for local scripts including `yfinance`, `pandas`, `dlt[bigquery]`, and `dbt-bigquery`.
+This creates a local virtual environment and installs all project dependencies from `pyproject.toml` / `uv.lock`.
 
 ---
 
@@ -498,7 +496,7 @@ Kestra runs locally as a Docker Compose stack (Kestra server + Postgres backend)
 
 ```bash
 cd kestra/
-docker-compose up -d
+docker compose up -d
 ```
 
 Wait about 30 seconds for the services to initialize, then open the Kestra UI:
@@ -514,7 +512,7 @@ http://localhost:8080
 | Username | `admin@kestra.io` |
 | Password | `Admin1234!` |
 
-> Kestra uses a Postgres container for its internal state. Both services must be running for the UI and flows to work. To check status: `docker-compose ps`
+> Kestra uses a Postgres container for its internal state. Both services must be running for the UI and flows to work.
 
 ---
 
@@ -527,7 +525,7 @@ Kestra's flows read GCP credentials and configuration from its internal **KV Sto
 #### 6.1 Import the KV setup flow
 
 1. In the Kestra UI, go to **Flows → Create**
-2. Paste the contents of `kestra_flows/setup_kv_store.yml` into the editor
+2. Paste the contents of `kestra/flows/setup_kv_store.yml` into the editor
 3. Click **Save**
 
 #### 6.2 Execute the KV setup flow
@@ -566,14 +564,14 @@ GCP_CREDS
 #### 7.1 Import the main flow
 
 1. In the Kestra UI, go to **Flows → Create**
-2. Paste the contents of `kestra_flows/yfinance_to_bigquery.yml`
+2. Paste the contents of `kestra/flows/yfinance_to_bigquery.yml`
 3. Click **Save**
 
 #### 7.2 Execute — First Run (Full Backfill)
 
 For the initial run, you want to load the full 4-year history of financial statements and stock prices.
 
-1. Click **Execute** on the `yfinance_to_bigquery_pro_test` flow
+1. Click **Execute** on the `yfinance_to_bigquery_pro` flow
 2. Set the `backfill` input to **`true`**
 3. Click **Execute**
 
@@ -620,7 +618,7 @@ docker build -t finsight-dbt .
 dbt requires a `profiles.yml` file to connect to BigQuery. Create this file at `~/.dbt/profiles.yml` (the default dbt profiles location):
 
 ```yaml
-finsight_50:
+dbt_transformation:
   target: dev
   outputs:
     dev:
@@ -629,7 +627,7 @@ finsight_50:
       project: your-gcp-project-id
       dataset: sp500_top50_analysis_gold
       location: US
-      keyfile: /path/to/your/service-account-key.json
+      keyfile: /root/credentials.json
       threads: 4
       timeout_seconds: 300
 ```
@@ -639,10 +637,12 @@ Replace:
 - `/path/to/your/service-account-key.json` with the absolute path to the JSON credentials file you downloaded in Step 2.4
 
 > If running dbt inside Docker, mount both the `profiles.yml` and the credentials file into the container. See the run command below.
+> These mounts are required so dbt in the container can read your local project files, profile config, and GCP key.
 
 #### 8.3 Run dbt inside Docker
 
 ```bash
+cd dbt_transformation
 docker run --rm \
   -v $(pwd):/usr/app \
   -v ~/.dbt:/root/.dbt \
@@ -678,14 +678,13 @@ mart_yoy_growth_unpivot
 
 ### Step 9 — Connect Looker Studio to BigQuery
 
+This step is optional and only needed for the dashboard layer.
+
 1. Go to [lookerstudio.google.com](https://lookerstudio.google.com/) and sign in with the same Google account that owns the GCP project
 2. Click **Create → Report**
 3. In the data source picker, choose **BigQuery**
 4. Select your project → dataset `sp500_top50_analysis_gold` → choose the first mart table (e.g. `mart_current_valuation_snapshot`)
-5. Click **Add to Report**
-6. Repeat to add the remaining 4 mart tables as additional data sources in the same report
-
-> From this point, follow the dashboard design guidelines in the sections above to recreate the three-page layout, or connect directly to the published dashboard link to explore the reference implementation.
+5. Click **Add to Report** (repeat for the other mart tables if you want to recreate the full dashboard)
 
 ---
 
@@ -695,9 +694,9 @@ mart_yoy_growth_unpivot
 |---|---|---|
 | 1 | Clone repository | < 1 min |
 | 2 | GCP project + service account + JSON key | 5–10 min |
-| 3 | `pip install -r requirements.txt` | 2–3 min |
+| 3 | `uv sync` | 2–3 min |
 | 4 | `terraform apply` — provision GCS + BQ | 2–3 min |
-| 5 | `docker-compose up` — start Kestra | 1–2 min |
+| 5 | `docker compose up` — start Kestra | 1–2 min |
 | 6 | Configure KV Store via `setup_kv_store` flow | 3–5 min |
 | 7 | Run ingestion flow (backfill = true) | 20–45 min |
 | 8 | Build dbt image → `dbt run` → `dbt test` | 5–10 min |

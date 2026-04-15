@@ -1,4 +1,4 @@
-id: yfinance_to_bigquery_pro_test
+id: yfinance_to_bigquery_pro
 namespace: company.data
 inputs:
   - id: backfill
