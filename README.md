@@ -54,7 +54,7 @@ The project delivers this by providing:
 
 ## Architecture
 
-<img src="images/dashboard/FinSight_50_Architecture_diagram.svg" alt="Project Architecture" width="800">
+<img src="images/FinSight_50_Architecture_diagram.svg" alt="Project Architecture" width="800">
 
 ---
 
