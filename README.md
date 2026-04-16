@@ -54,57 +54,6 @@ The project delivers this by providing:
 
 ## Architecture
 
-```
-                    ┌──────────────────────────┐
-                    │     Terraform  (IaC)      │
-                    │  GCS Bucket + BQ Dataset  │
-                    └────────────┬─────────────┘
-                                 │ provisions
-                                 ▼
-  ┌───────────────────────────────────────────────────────────┐
-  │                Kestra  (Orchestration)                    │
-  │                                                           │
-  │  ┌──────────────────────────────────────────────────┐     │
-  │  │    Docker Container  (python:3.11-slim)          │     │
-  │  │                                                  │     │
-  │  │  get_top50_tickers.py ──► top_50_tickers.csv     │     │
-  │  │                                                  │     │
-  │  │  dltHub pipeline  (main.py)                      │     │
-  │  │    yfinance API                                  │     │
-  │  │      ├── Stock prices  (4y / 1mo)                │     │
-  │  │      ├── Income statements (annual + quarterly)  │     │
-  │  │      ├── Balance sheets   (annual + quarterly)   │     │
-  │  │      ├── Cash flow stmts  (annual + quarterly)   │     │
-  │  │      └── Company info (sector, employees, …)     │     │
-  │  │           │                                      │     │
-  │  │           ├──► GCS Bucket   (staging / lake)     │     │
-  │  │           └──► BigQuery     (raw tables)         │     │
-  │  └──────────────────────────────────────────────────┘     │
-  └───────────────────────────┬───────────────────────────────┘
-                              │
-                              ▼
-  ┌───────────────────────────────────────────────────────────┐
-  │                dbt Core  (Transformation)                 │
-  │                                                           │
-  │   staging/  ──►  intermediate/  ──►  marts/               │
-  │                                                           │
-  │   mart_current_valuation_snapshot                         │
-  │   mart_historical_financial_metrics                       │
-  │   mart_liquidity_capital_structure                        │
-  │   mart_sector_metrics_heatmap                             │
-  │   mart_yoy_growth_unpivot                                 │
-  └───────────────────────────┬───────────────────────────────┘
-                              │
-                              ▼
-  ┌───────────────────────────────────────────────────────────┐
-  │              Looker Studio  (Dashboard)                   │
-  │                                                           │
-  │   Page 1 — Company snapshot    (current health)           │
-  │   Page 2 — Historical trends   (4-year analysis)          │
-  │   Page 3 — Cross-company screener  (all 50 tickers)       │
-  └───────────────────────────────────────────────────────────┘
-```
-
 <img src="images/dashboard/FinSight_50_Architecture_diagram.svg" alt="Project Architecture" width="800">
 
 ---
@@ -222,25 +171,20 @@ The Looker Studio dashboard is organized across three pages, all controlled by a
 ### Page 1 — Company Snapshot
 Current financial health at a glance for any selected ticker.
 
-- **KPI scorecard strip** — 6 key ratios (P/E, P/S, gross margin, net margin, FCF margin, ROE), each showing ticker value vs sector benchmark with color-coded delta arrows; valuation multiples use inverted color logic (higher = red = expensive vs peers)
-- **Horizontal bar charts with dynamic reference lines** — gross margin, net margin, FCF margin, and ROE vs live sector averages; reference lines read from `sector_avg_*` fields — fully dynamic, no hardcoded values
-- **Grouped bar chart** — P/E, P/S, P/CF side by side against sector medians, revealing valuation premium or discount at a glance
-- **Balance sheet donut** — assets decomposed into cash, current (ex-cash), and non-current
+- **KPI scorecard strip** — 9 key ratios (P/E, P/S, gross margin, net margin, FCF margin, ROE ,Current Ratio ,Debt to Equity , Asset turnover), each showing ticker value vs sector benchmark with color-coded delta arrows; valuation multiples use inverted color logic (higher = red = expensive vs peers)
+- **Balance sheet donuts** — assets decomposed into cash, current (ex-cash), and non-current. Capital structure decomposed into total debts, stockholders equity and other liabilities.
 
 ### Page 2 — Historical Performance
 Four-year trend analysis for the selected ticker.
 
 - **Combo chart** — revenue per share (bars) + net margin % (line, right axis) over FY-3 → FY0; standard sell-side equity research format
 - **Dual-line chart** — EPS vs FCF per share; convergence or divergence signals earnings quality
-- **Stacked area chart** — margin decomposition showing how gross, operating, and net margins have evolved year over year
-- **YoY growth pivot table** — 3×3 Bloomberg-style heatmap (metric rows × fiscal year columns) sourced from `mart_yoy_growth_unpivot`; green = positive growth, red = negative, white/gray = near zero
+- **YoY growth pivot table** — 3×3 Bloomberg-style heatmap (metric rows × fiscal year columns) sourced from `mart_yoy_growth_unpivot`; green = positive growth, red = negative, white/yellow = near zero
 
 ### Page 3 — Cross-Company Screener
 All 50 companies compared simultaneously, filterable by sector.
 
-- **Sorted horizontal bar chart** — rank all tickers by any selected metric with a dynamic sector-average reference line
-- **Bubble chart** — P/E (valuation) vs ROE (quality); bubble size = market cap; color = sector; quadrant lines at sector medians
-- **Sector heatmap table** — sourced from `mart_sector_metrics_heatmap`; rows as sectors, columns as key metrics, conditional formatting per cell
+- **Bubble chart** — P/E (valuation) vs Net Profit Margin (quality); bubble size = market cap; color = sector; quadrant lines at sector medians
 
 ---
 
@@ -263,7 +207,8 @@ finsight-50/
 │
 ├── dbt/
 │   ├── models/
-│   │   ├── staging/                   # Raw source cleaning and type casting
+│   │   |                              # Raw source cleaning and type casting
+|   |   |── staging/                   # Partitioning and Clustering  
 │   │   ├── intermediate/              # Business logic, joins, TTM calculations
 │   │   └── marts/                      # Final output tables (5 models)
 │   │       ├── mart_current_valuation_snapshot.sql
@@ -718,7 +663,7 @@ The project demonstrates all core competencies from the course:
 | Workflow orchestration | Kestra with Postgres backend, monthly scheduled flow |
 | Data ingestion | dltHub — schema inference, GCS staging, merge/replace loads |
 | Data lake | Google Cloud Storage (raw staging layer) |
-| Data warehouse | BigQuery (raw tables + all dbt computation) |
+| Data warehouse | BigQuery (Partitioning and clustering) |
 | Data transformation | dbt Core — staging → intermediate → 5 mart models |
 | Analytical modeling | 16 financial metrics, sector benchmarking, TTM calculations |
 | Data visualization | Looker Studio — 3-page dashboard with dynamic filters and heatmaps |
