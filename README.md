@@ -294,7 +294,7 @@ The Kestra flow runs on a **monthly schedule**. Each run executes this sequence 
 
 ## Dashboard Access
 
-> 🔗 **[View Live Dashboard →](your-looker-studio-link-here)**
+> 🔗 **[View Live Dashboard →](https://datastudio.google.com/reporting/93b99645-3f72-4153-80cc-20b2ea1791d8)**
 
 The dashboard is publicly accessible in view mode. Use the **ticker dropdown** on Pages 1 and 2 to explore any of the 50 companies. Use the **sector filter** on Page 3 to narrow the cross-company screener.
 
